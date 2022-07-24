@@ -1,75 +1,59 @@
 package fi.dy.masa.itemscroller.util;
 
-import org.lwjgl.input.Mouse;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.inventory.GuiContainer;
-import fi.dy.masa.malilib.gui.util.GuiUtils;
-import fi.dy.masa.malilib.input.KeyBind;
-import fi.dy.masa.malilib.util.GameUtils;
-import fi.dy.masa.malilib.util.inventory.InventoryScreenUtils;
-import fi.dy.masa.itemscroller.config.Configs;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import fi.dy.masa.itemscroller.config.Hotkeys;
+import fi.dy.masa.itemscroller.event.KeybindCallbacks;
 import fi.dy.masa.itemscroller.recipes.CraftingHandler;
+import fi.dy.masa.malilib.hotkeys.IKeybind;
+import fi.dy.masa.malilib.hotkeys.KeybindMulti;
+import fi.dy.masa.malilib.util.GuiUtils;
 
 public class InputUtils
 {
-    public static int getMouseX()
-    {
-        int width = GuiUtils.getScaledWindowWidth();
-        return Mouse.getX() * width / GuiUtils.getDisplayWidth();
-    }
-
-    public static int getMouseY()
-    {
-        int height = GuiUtils.getScaledWindowHeight();
-        return height - Mouse.getY() * height / GuiUtils.getDisplayHeight() - 1;
-    }
-
     public static boolean isRecipeViewOpen()
     {
         return GuiUtils.getCurrentScreen() != null &&
-               Hotkeys.SHOW_RECIPES.getKeyBind().isKeyBindHeld() &&
-               Configs.Toggles.MOD_FEATURES_ENABLED.getBooleanValue() &&
+               Hotkeys.RECIPE_VIEW.getKeybind().isKeybindHeld() &&
+               KeybindCallbacks.getInstance().functionalityEnabled() &&
                CraftingHandler.isCraftingGui(GuiUtils.getCurrentScreen());
     }
 
-    public static boolean canShiftDropItems(GuiContainer gui, Minecraft mc)
+    public static boolean canShiftDropItems(HandledScreen<?> gui, MinecraftClient mc, int mouseX, int mouseY)
     {
-        if (InventoryUtils.isStackEmpty(mc.player.inventory.getItemStack()) == false)
+        if (InventoryUtils.isStackEmpty(gui.getScreenHandler().getCursorStack()) == false)
         {
-            int left = InventoryScreenUtils.getGuiPosX(gui);
-            int top = InventoryScreenUtils.getGuiPosY(gui);
-            int xSize = InventoryScreenUtils.getGuiSizeX(gui);
-            int ySize = InventoryScreenUtils.getGuiSizeY(gui);
-            int mouseAbsX = Mouse.getEventX() * gui.width / GuiUtils.getDisplayWidth();
-            int mouseAbsY = gui.height - Mouse.getEventY() * gui.height / GuiUtils.getDisplayHeight() - 1;
-            boolean isOutsideGui = mouseAbsX < left || mouseAbsY < top || mouseAbsX >= left + xSize || mouseAbsY >= top + ySize;
+            int left = AccessorUtils.getGuiLeft(gui);
+            int top = AccessorUtils.getGuiTop(gui);
+            int xSize = AccessorUtils.getGuiXSize(gui);
+            int ySize = AccessorUtils.getGuiYSize(gui);
+            boolean isOutsideGui = mouseX < left || mouseY < top || mouseX >= left + xSize || mouseY >= top + ySize;
 
-            return isOutsideGui && AccessorUtils.getSlotAtPosition(gui, mouseAbsX - left, mouseAbsY - top) == null;
+            return isOutsideGui && AccessorUtils.getSlotAtPosition(gui, mouseX - left, mouseY - top) == null;
         }
 
         return false;
     }
 
-    public static MoveAction getDragMoveAction(KeyBind key)
+    public static MoveAction getDragMoveAction(IKeybind key)
     {
-             if (key == Hotkeys.DRAG_MOVE_ENTIRE_STACKS.getKeyBind())       { return MoveAction.MOVE_TO_OTHER_STACKS;       }
-        else if (key == Hotkeys.DRAG_MOVE_LEAVE_ONE.getKeyBind())           { return MoveAction.MOVE_TO_OTHER_LEAVE_ONE;    }
-        else if (key == Hotkeys.DRAG_MOVE_ONE.getKeyBind())                 { return MoveAction.MOVE_TO_OTHER_MOVE_ONE;     }
-        else if (key == Hotkeys.DRAG_MOVE_ALL_MATCHING.getKeyBind())        { return MoveAction.MOVE_TO_OTHER_MATCHING;     }
+             if (key == Hotkeys.KEY_DRAG_FULL_STACKS.getKeybind())      { return MoveAction.MOVE_TO_OTHER_STACKS;       }
+        else if (key == Hotkeys.KEY_DRAG_LEAVE_ONE.getKeybind())        { return MoveAction.MOVE_TO_OTHER_LEAVE_ONE;    }
+        else if (key == Hotkeys.KEY_DRAG_MOVE_ONE.getKeybind())         { return MoveAction.MOVE_TO_OTHER_MOVE_ONE;     }
+        else if (key == Hotkeys.KEY_DRAG_MATCHING.getKeybind())         { return MoveAction.MOVE_TO_OTHER_MATCHING;     }
 
-        else if (key == Hotkeys.DRAG_DROP_ENTIRE_STACKS.getKeyBind())       { return MoveAction.DROP_STACKS;                }
-        else if (key == Hotkeys.DRAG_DROP_LEAVE_ONE.getKeyBind())           { return MoveAction.DROP_LEAVE_ONE;             }
-        else if (key == Hotkeys.DRAG_DROP_ONE.getKeyBind())                 { return MoveAction.DROP_ONE;                   }
+        else if (key == Hotkeys.KEY_DRAG_DROP_STACKS.getKeybind())      { return MoveAction.DROP_STACKS;                }
+        else if (key == Hotkeys.KEY_DRAG_DROP_LEAVE_ONE.getKeybind())   { return MoveAction.DROP_LEAVE_ONE;             }
+        else if (key == Hotkeys.KEY_DRAG_DROP_SINGLE.getKeybind())      { return MoveAction.DROP_ONE;                   }
 
-        else if (key == Hotkeys.WS_MOVE_UP_ENTIRE_STACKS.getKeyBind())      { return MoveAction.MOVE_UP_STACKS;             }
-        else if (key == Hotkeys.WS_MOVE_UP_ALL_MATCHING.getKeyBind())       { return MoveAction.MOVE_UP_MATCHING;           }
-        else if (key == Hotkeys.WS_MOVE_UP_LEAVE_ONE.getKeyBind())          { return MoveAction.MOVE_UP_LEAVE_ONE;          }
-        else if (key == Hotkeys.WS_MOVE_UP_ONE.getKeyBind())                { return MoveAction.MOVE_UP_MOVE_ONE;           }
-        else if (key == Hotkeys.WS_MOVE_DOWN_ENTIRE_STACKS.getKeyBind())    { return MoveAction.MOVE_DOWN_STACKS;           }
-        else if (key == Hotkeys.WS_MOVE_DOWN_ALL_MATCHING.getKeyBind())     { return MoveAction.MOVE_DOWN_MATCHING;         }
-        else if (key == Hotkeys.WS_MOVE_DOWN_LEAVE_ONE.getKeyBind())        { return MoveAction.MOVE_DOWN_LEAVE_ONE;        }
-        else if (key == Hotkeys.WS_MOVE_DOWN_ONE.getKeyBind())              { return MoveAction.MOVE_DOWN_MOVE_ONE;         }
+        else if (key == Hotkeys.KEY_WS_MOVE_UP_STACKS.getKeybind())     { return MoveAction.MOVE_UP_STACKS;             }
+        else if (key == Hotkeys.KEY_WS_MOVE_UP_MATCHING.getKeybind())   { return MoveAction.MOVE_UP_MATCHING;           }
+        else if (key == Hotkeys.KEY_WS_MOVE_UP_LEAVE_ONE.getKeybind())  { return MoveAction.MOVE_UP_LEAVE_ONE;          }
+        else if (key == Hotkeys.KEY_WS_MOVE_UP_SINGLE.getKeybind())     { return MoveAction.MOVE_UP_MOVE_ONE;           }
+        else if (key == Hotkeys.KEY_WS_MOVE_DOWN_STACKS.getKeybind())   { return MoveAction.MOVE_DOWN_STACKS;           }
+        else if (key == Hotkeys.KEY_WS_MOVE_DOWN_MATCHING.getKeybind()) { return MoveAction.MOVE_DOWN_MATCHING;         }
+        else if (key == Hotkeys.KEY_WS_MOVE_DOWN_LEAVE_ONE.getKeybind()){ return MoveAction.MOVE_DOWN_LEAVE_ONE;        }
+        else if (key == Hotkeys.KEY_WS_MOVE_DOWN_SINGLE.getKeybind())   { return MoveAction.MOVE_DOWN_MOVE_ONE;         }
 
         return MoveAction.NONE;
     }
@@ -78,22 +62,22 @@ public class InputUtils
     {
         switch (action)
         {
-            case MOVE_TO_OTHER_STACKS:          return Hotkeys.DRAG_MOVE_ENTIRE_STACKS.getKeyBind().isKeyBindHeld();
-            case MOVE_TO_OTHER_LEAVE_ONE:       return Hotkeys.DRAG_MOVE_LEAVE_ONE.getKeyBind().isKeyBindHeld();
-            case MOVE_TO_OTHER_MOVE_ONE:        return Hotkeys.DRAG_MOVE_ONE.getKeyBind().isKeyBindHeld();
-            case MOVE_TO_OTHER_MATCHING:        return Hotkeys.DRAG_MOVE_ALL_MATCHING.getKeyBind().isKeyBindHeld();
-            case MOVE_TO_OTHER_EVERYTHING:      return Hotkeys.MOVE_EVERYTHING.getKeyBind().isKeyBindHeld();
-            case DROP_STACKS:                   return Hotkeys.DRAG_DROP_ENTIRE_STACKS.getKeyBind().isKeyBindHeld();
-            case DROP_LEAVE_ONE:                return Hotkeys.DRAG_DROP_LEAVE_ONE.getKeyBind().isKeyBindHeld();
-            case DROP_ONE:                      return Hotkeys.DRAG_DROP_ONE.getKeyBind().isKeyBindHeld();
-            case MOVE_UP_STACKS:                return Hotkeys.WS_MOVE_UP_ENTIRE_STACKS.getKeyBind().isKeyBindHeld();
-            case MOVE_UP_MATCHING:              return Hotkeys.WS_MOVE_UP_ALL_MATCHING.getKeyBind().isKeyBindHeld();
-            case MOVE_UP_LEAVE_ONE:             return Hotkeys.WS_MOVE_UP_LEAVE_ONE.getKeyBind().isKeyBindHeld();
-            case MOVE_UP_MOVE_ONE:              return Hotkeys.WS_MOVE_UP_ONE.getKeyBind().isKeyBindHeld();
-            case MOVE_DOWN_STACKS:              return Hotkeys.WS_MOVE_DOWN_ENTIRE_STACKS.getKeyBind().isKeyBindHeld();
-            case MOVE_DOWN_MATCHING:            return Hotkeys.WS_MOVE_DOWN_ALL_MATCHING.getKeyBind().isKeyBindHeld();
-            case MOVE_DOWN_LEAVE_ONE:           return Hotkeys.WS_MOVE_DOWN_LEAVE_ONE.getKeyBind().isKeyBindHeld();
-            case MOVE_DOWN_MOVE_ONE:            return Hotkeys.WS_MOVE_DOWN_ONE.getKeyBind().isKeyBindHeld();
+            case MOVE_TO_OTHER_STACKS:          return Hotkeys.KEY_DRAG_FULL_STACKS.getKeybind().isKeybindHeld();
+            case MOVE_TO_OTHER_LEAVE_ONE:       return Hotkeys.KEY_DRAG_LEAVE_ONE.getKeybind().isKeybindHeld();
+            case MOVE_TO_OTHER_MOVE_ONE:        return Hotkeys.KEY_DRAG_MOVE_ONE.getKeybind().isKeybindHeld();
+            case MOVE_TO_OTHER_MATCHING:        return Hotkeys.KEY_DRAG_MATCHING.getKeybind().isKeybindHeld();
+            case MOVE_TO_OTHER_EVERYTHING:      return Hotkeys.KEY_MOVE_EVERYTHING.getKeybind().isKeybindHeld();
+            case DROP_STACKS:                   return Hotkeys.KEY_DRAG_DROP_STACKS.getKeybind().isKeybindHeld();
+            case DROP_LEAVE_ONE:                return Hotkeys.KEY_DRAG_DROP_LEAVE_ONE.getKeybind().isKeybindHeld();
+            case DROP_ONE:                      return Hotkeys.KEY_DRAG_DROP_SINGLE.getKeybind().isKeybindHeld();
+            case MOVE_UP_STACKS:                return Hotkeys.KEY_WS_MOVE_UP_STACKS.getKeybind().isKeybindHeld();
+            case MOVE_UP_MATCHING:              return Hotkeys.KEY_WS_MOVE_UP_MATCHING.getKeybind().isKeybindHeld();
+            case MOVE_UP_LEAVE_ONE:             return Hotkeys.KEY_WS_MOVE_UP_LEAVE_ONE.getKeybind().isKeybindHeld();
+            case MOVE_UP_MOVE_ONE:              return Hotkeys.KEY_WS_MOVE_UP_SINGLE.getKeybind().isKeybindHeld();
+            case MOVE_DOWN_STACKS:              return Hotkeys.KEY_WS_MOVE_DOWN_STACKS.getKeybind().isKeybindHeld();
+            case MOVE_DOWN_MATCHING:            return Hotkeys.KEY_WS_MOVE_DOWN_MATCHING.getKeybind().isKeybindHeld();
+            case MOVE_DOWN_LEAVE_ONE:           return Hotkeys.KEY_WS_MOVE_DOWN_LEAVE_ONE.getKeybind().isKeybindHeld();
+            case MOVE_DOWN_MOVE_ONE:            return Hotkeys.KEY_WS_MOVE_DOWN_SINGLE.getKeybind().isKeybindHeld();
             default:
         }
 
@@ -143,16 +127,16 @@ public class InputUtils
 
     public static boolean isAttack(int keyCode)
     {
-        return keyCode == GameUtils.getClient().gameSettings.keyBindAttack.getKeyCode();
+        return keyCode == KeybindMulti.getKeyCode(MinecraftClient.getInstance().options.attackKey);
     }
 
     public static boolean isUse(int keyCode)
     {
-        return keyCode == GameUtils.getClient().gameSettings.keyBindUseItem.getKeyCode();
+        return keyCode == KeybindMulti.getKeyCode(MinecraftClient.getInstance().options.useKey);
     }
 
     public static boolean isPickBlock(int keyCode)
     {
-        return keyCode == GameUtils.getClient().gameSettings.keyBindPickBlock.getKeyCode();
+        return keyCode == KeybindMulti.getKeyCode(MinecraftClient.getInstance().options.pickItemKey);
     }
 }

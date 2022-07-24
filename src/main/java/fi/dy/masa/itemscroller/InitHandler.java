@@ -1,38 +1,33 @@
 package fi.dy.masa.itemscroller;
 
-import fi.dy.masa.malilib.config.JsonModConfig;
-import fi.dy.masa.malilib.config.JsonModConfig.ConfigDataUpdater;
-import fi.dy.masa.malilib.config.util.ConfigUpdateUtils.KeyBindSettingsResetter;
-import fi.dy.masa.malilib.event.InitializationHandler;
-import fi.dy.masa.malilib.registry.Registry;
-import fi.dy.masa.itemscroller.config.Actions;
 import fi.dy.masa.itemscroller.config.Configs;
-import fi.dy.masa.itemscroller.event.ClientWorldChangeHandler;
-import fi.dy.masa.itemscroller.input.InputHandler;
-import fi.dy.masa.itemscroller.input.KeybindCallbacks;
-import fi.dy.masa.itemscroller.gui.ConfigScreen;
-import fi.dy.masa.itemscroller.input.ItemScrollerHotkeyProvider;
+import fi.dy.masa.itemscroller.event.InputHandler;
+import fi.dy.masa.itemscroller.event.KeybindCallbacks;
+import fi.dy.masa.itemscroller.event.WorldLoadListener;
+import fi.dy.masa.malilib.config.ConfigManager;
+import fi.dy.masa.malilib.event.InputEventHandler;
+import fi.dy.masa.malilib.event.TickHandler;
+import fi.dy.masa.malilib.event.WorldLoadHandler;
+import fi.dy.masa.malilib.interfaces.IInitializationHandler;
 
-public class InitHandler implements InitializationHandler
+public class InitHandler implements IInitializationHandler
 {
     @Override
     public void registerModHandlers()
     {
-        // Reset all KeyBindSettings when updating to the first post-malilib-refactor version
-        ConfigDataUpdater updater = new KeyBindSettingsResetter(ItemScrollerHotkeyProvider.INSTANCE::getAllHotkeys, 0);
-        Registry.CONFIG_MANAGER.registerConfigHandler(JsonModConfig.createJsonModConfig(Reference.MOD_INFO, Configs.CURRENT_VERSION, Configs.CATEGORIES, updater));
+        ConfigManager.getInstance().registerConfigHandler(Reference.MOD_ID, new Configs());
 
-        Registry.CONFIG_SCREEN.registerConfigScreenFactory(Reference.MOD_INFO, ConfigScreen::create);
-        Registry.CONFIG_TAB.registerConfigTabProvider(Reference.MOD_INFO, ConfigScreen::getConfigTabs);
+        InputHandler handler = new InputHandler();
+        InputEventHandler.getKeybindManager().registerKeybindProvider(handler);
+        InputEventHandler.getInputManager().registerKeyboardInputHandler(handler);
+        InputEventHandler.getInputManager().registerMouseInputHandler(handler);
 
-        Registry.HOTKEY_MANAGER.registerHotkeyProvider(ItemScrollerHotkeyProvider.INSTANCE);
-        Registry.INPUT_DISPATCHER.registerKeyboardInputHandler(InputHandler.INSTANCE);
-        Registry.INPUT_DISPATCHER.registerMouseInputHandler(InputHandler.INSTANCE);
+        WorldLoadListener listener = new WorldLoadListener();
+        WorldLoadHandler.getInstance().registerWorldLoadPreHandler(listener);
+        WorldLoadHandler.getInstance().registerWorldLoadPostHandler(listener);
 
-        ClientWorldChangeHandler listener = new ClientWorldChangeHandler();
-        Registry.CLIENT_WORLD_CHANGE_EVENT_DISPATCHER.registerClientWorldChangeHandler(listener);
+        TickHandler.getInstance().registerClientTickHandler(KeybindCallbacks.getInstance());
 
-        Actions.init();
-        KeybindCallbacks.INSTANCE.setCallbacks();
+        KeybindCallbacks.getInstance().setCallbacks();
     }
 }

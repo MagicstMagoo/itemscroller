@@ -1,31 +1,60 @@
 package fi.dy.masa.itemscroller.util;
 
-import net.minecraft.client.gui.GuiMerchant;
-import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.inventory.ClickType;
-import net.minecraft.inventory.Slot;
-import fi.dy.masa.itemscroller.mixin.IMixinGuiContainer;
+import javax.annotation.Nullable;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.gui.screen.ingame.MerchantScreen;
+import net.minecraft.screen.slot.Slot;
+import net.minecraft.screen.slot.SlotActionType;
+import fi.dy.masa.itemscroller.mixin.IMixinMerchantScreen;
+import fi.dy.masa.itemscroller.mixin.IMixinScreenWithHandler;
 import fi.dy.masa.itemscroller.mixin.IMixinSlot;
 
 public class AccessorUtils
 {
-    public static Slot getSlotAtPosition(GuiContainer gui, int x, int y)
+    @Nullable
+    public static Slot getSlotUnderMouse(HandledScreen<?> gui)
     {
-        return ((IMixinGuiContainer) gui).getSlotAtPositionInvoker(x, y);
+        return ((IMixinScreenWithHandler) gui).itemscroller_getHoveredSlot();
     }
 
-    public static void handleMouseClick(GuiContainer gui, Slot slotIn, int slotId, int mouseButton, ClickType type)
+    @Nullable
+    public static Slot getSlotAtPosition(HandledScreen<?> gui, int x, int y)
     {
-        ((IMixinGuiContainer) gui).handleMouseClickInvoker(slotIn, slotId, mouseButton, type);
+        return ((IMixinScreenWithHandler) gui).itemscroller_getSlotAtPositionInvoker(x, y);
     }
 
-    public static int getSelectedMerchantRecipe(GuiMerchant gui)
+    public static void handleMouseClick(HandledScreen<?> gui, Slot slotIn, int slotId, int mouseButton, SlotActionType type)
     {
-        return ((IGuiMerchant) gui).getSelectedMerchantRecipe();
+        ((IMixinScreenWithHandler) gui).itemscroller_handleMouseClickInvoker(slotIn, slotId, mouseButton, type);
+    }
+
+    public static int getGuiLeft(HandledScreen<?> gui)
+    {
+        return ((IMixinScreenWithHandler) gui).itemscroller_getGuiLeft();
+    }
+
+    public static int getGuiTop(HandledScreen<?> gui)
+    {
+        return ((IMixinScreenWithHandler) gui).itemscroller_getGuiTop();
+    }
+
+    public static int getGuiXSize(HandledScreen<?> gui)
+    {
+        return ((IMixinScreenWithHandler) gui).itemscroller_getBackgroundWidth();
+    }
+
+    public static int getGuiYSize(HandledScreen<?> gui)
+    {
+        return ((IMixinScreenWithHandler) gui).itemscroller_getBackgroundHeight();
+    }
+
+    public static int getSelectedMerchantRecipe(MerchantScreen gui)
+    {
+        return ((IMixinMerchantScreen) gui).itemscroller_getSelectedMerchantRecipe();
     }
 
     public static int getSlotIndex(Slot slot)
     {
-        return ((IMixinSlot) slot).getSlotIndex();
+        return ((IMixinSlot) slot).itemscroller_getSlotIndex();
     }
 }

@@ -1,11 +1,10 @@
 package fi.dy.masa.itemscroller.util;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 import net.minecraft.item.ItemStack;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 /**
  * Wrapper class for ItemStack, which implements equals()
@@ -31,9 +30,8 @@ public class ItemType
         final int prime = 31;
         int result = 1;
         //result = prime * result + ((stack == null) ? 0 : stack.hashCode());
-        result = prime * result + this.stack.getMetadata();
         result = prime * result + this.stack.getItem().hashCode();
-        result = prime * result + (this.stack.getTagCompound() != null ? this.stack.getTagCompound().hashCode() : 0);
+        result = prime * result + (this.stack.getNbt() != null ? this.stack.getNbt().hashCode() : 0);
         return result;
     }
 
@@ -44,32 +42,24 @@ public class ItemType
             return true;
         if (obj == null)
             return false;
-        if (getClass() != obj.getClass())
+        if (this.getClass() != obj.getClass())
             return false;
 
         ItemType other = (ItemType) obj;
 
         if (InventoryUtils.isStackEmpty(this.stack) || InventoryUtils.isStackEmpty(other.stack))
         {
-            if (InventoryUtils.isStackEmpty(this.stack) != InventoryUtils.isStackEmpty(other.stack))
-                return false;
+            return InventoryUtils.isStackEmpty(this.stack) == InventoryUtils.isStackEmpty(other.stack);
         }
         else
         {
-            if (this.stack.getMetadata() != other.stack.getMetadata())
-            {
-                return false;
-            }
-
             if (this.stack.getItem() != other.stack.getItem())
             {
                 return false;
             }
 
-            return ItemStack.areItemStackTagsEqual(this.stack, other.stack);
+            return ItemStack.areNbtEqual(this.stack, other.stack);
         }
-
-        return true;
     }
 
     /**
@@ -77,9 +67,9 @@ public class ItemType
      * @param stacks
      * @return
      */
-    public static Map<ItemType, List<Integer>> getSlotsPerItem(ItemStack[] stacks)
+    public static Map<ItemType, IntArrayList> getSlotsPerItem(ItemStack[] stacks)
     {
-        Map<ItemType, List<Integer>> mapSlots = new HashMap<ItemType, List<Integer>>();
+        Map<ItemType, IntArrayList> mapSlots = new HashMap<>();
 
         for (int i = 0; i < stacks.length; i++)
         {
@@ -88,13 +78,7 @@ public class ItemType
             if (InventoryUtils.isStackEmpty(stack) == false)
             {
                 ItemType item = new ItemType(stack);
-                List<Integer> slots = mapSlots.get(item);
-
-                if (slots == null)
-                {
-                    slots = new ArrayList<Integer>();
-                    mapSlots.put(item, slots);
-                }
+                IntArrayList slots = mapSlots.computeIfAbsent(item, k -> new IntArrayList());
 
                 slots.add(i);
             }
